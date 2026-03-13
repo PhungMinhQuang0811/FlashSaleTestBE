@@ -1,0 +1,153 @@
+package com.mp.flashsale.security.auth;
+
+import com.mp.flashsale.exception.AppException;
+import com.mp.flashsale.exception.ErrorCode;
+import com.mp.flashsale.security.service.UserDetailsServiceImpl;
+import com.mp.flashsale.security.service.TokenService;
+import com.mp.flashsale.util.JwtUtils;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.server.PathContainer;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
+import org.springframework.web.util.pattern.PathPatternParser;
+
+import java.io.IOException;
+import java.util.Arrays;
+
+
+@Component
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+public class AuthTokenFilter extends OncePerRequestFilter {
+
+    @Value("${application.security.jwt.access-token-cookie-name}")
+    @NonFinal
+    private String accessTokenCookieName;
+
+    @Value("${application.security.jwt.csrf-token-header-name}")
+    @NonFinal
+    private String csrfTokenHeaderName;
+
+
+
+    @Value("${application.security.public-endpoints}")
+    @NonFinal
+    private String[] publicEndpoints;
+
+    JwtUtils jwtUtils;
+    UserDetailsServiceImpl userDetailsService;
+    TokenService tokenService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws
+            ServletException, IOException {
+
+        String uri = request.getRequestURI();
+        log.info("{} go to AuthTokenFilter", uri);
+
+        String contextPath = request.getContextPath();
+        String path = uri.substring(contextPath.length());
+
+        //skip authentication with public endpoints
+        PathPatternParser pathPatternParser = new PathPatternParser();
+        if (Arrays
+                .stream(publicEndpoints)
+                .anyMatch(endpoint -> pathPatternParser.parse(endpoint)
+                        .matches(PathContainer.parsePath(path)))) {
+            log.info("Public endpoint: {}, skipping authentication", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+
+            //get access token from cookie
+            String accessToken = null;
+            Cookie cookie = WebUtils.getCookie(request, accessTokenCookieName);
+            if (cookie != null) {
+                accessToken = cookie.getValue();
+//                log.info("Cookie found token: {}", accessToken);
+            } else {
+                log.info("Missing access token cookie");
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            //get csrf token from header
+            String csrfToken = request.getHeader(csrfTokenHeaderName);
+            if (csrfToken == null || csrfToken.trim().isEmpty()) {
+                log.info("Missing CSRF token in header");
+                throw new AppException(ErrorCode.INVALID_CSRF_TOKEN);
+            }
+
+            //validate accessToken
+            jwtUtils.validateJwtAccessToken(accessToken);
+
+            //validate csrf token
+            jwtUtils.validateJwtCsrfToken(csrfToken);
+
+
+
+            //is the email in the csrf token same as the one in access token
+            String email = jwtUtils.getUserEmailFromAccessToken(accessToken);
+            String csrfEmail = jwtUtils.getUserEmailFromCsrfToken(csrfToken);
+            if (!email.equalsIgnoreCase(csrfEmail)) {
+                log.info("The email in access token {} is different from the one in csrf token {}", email, csrfEmail);
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            //access token and csrf still valid -> check whether it invalidated (by logout or refresh)
+            if(tokenService.isAccessTokenInvalidated(accessToken)){
+                //access token is invalidated
+                log.info("The access token is invalidated, {}", accessToken);
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            if (tokenService.isCsrfTokenInvalidated(csrfToken)) {
+                log.info("The csrf token is invalidated, {}", csrfToken);
+                throw new AppException(ErrorCode.INVALID_CSRF_TOKEN);
+            }
+            //Load UserDetails (the information of authenticated user)
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails,
+                            null, //authenticated request, so that doesn't need password
+                            userDetails.getAuthorities());
+
+            //save the information's of request to authentication object to used later
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            //set up UserDetails in current SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info("Authenticate user successfully! email: {}", email);
+        } catch (Exception e) {
+            String exceptionMessage = e.getMessage();
+            if (e instanceof AppException) {
+                exceptionMessage =  ((AppException) e).getErrorCode().toString();
+            }
+            request.setAttribute("ERROR_CODE", exceptionMessage);
+        }
+
+        //continue filter chain
+        filterChain.doFilter(request, response);
+    }
+
+}

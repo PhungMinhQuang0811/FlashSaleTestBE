@@ -1,21 +1,55 @@
 ﻿server:
   port: 8080
+  servlet:
+    context-path: /api
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
   tomcat:
     threads:
       max: 10
 
+application:
+  domain-name: ${DOMAIN_NAME:localhost}
+  email: ${APPLICATION_EMAIL}
+  security:
+    jwt:
+      access-token-secret-key: ${JWT_ACCESS_SECRET_KEY}
+      access-token-cookie-name: flashsale-jwt
+      access-token-expiration: 3600000 # 1 hour
+      refresh-token-secret-key: ${JWT_REFRESH_SECRET_KEY}
+      refresh-token-cookie-name: flashsale-jwt-refresh
+      refresh-token-expiration: 604800000 # 7 days
+      csrf-token-secret-key: ${JWT_CSRF_SECRET_KEY}
+      csrf-token-cookie-name: flashsale-jwt-csrf
+      csrf-token-header-name: X-CSRF-TOKEN
+    public-endpoints:
+      "
+        /user/register
+        /user/check-unique-email
+        /user/resend-verify-email/**
+        /user/verify-email/**
+        /auth/**
+        /homepage/**
+        /items/public/**
+      "
+
+front-end:
+  base-url: ${FE_BASE_URL}
+
 spring:
+  profiles:
+    active: dev
   application:
     name: FlashSaleTest
 
-  # Cấu hình kết nối Database
+  # Database
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/flash_sale_db?createDatabaseIfNotExist=true}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # Cấu hình JPA / Hibernate
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,9 +57,43 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        physical_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        dialect: org.hibernate.dialect.MySQLDialect
 
-  # Cấu hình Redis
+  # Redis & NoSQL
   data:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
+      timeout: 6000
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
+
+  # Mail (Mailtrap cho dev)
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Tích hợp Cloudinary & Payment
+cloud:
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+    folder-name: karental
+
+payment:
+  vnpay:
+    tmn-code: ${TMN_CODE}
+    secret-key: ${VNPAY_SECRET_KEY}
+    init-payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    return-url: ${front-end.base-url}/#/my-wallet
+    timeout: 15
