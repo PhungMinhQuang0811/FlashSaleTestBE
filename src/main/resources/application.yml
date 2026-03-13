@@ -97,3 +97,9 @@ payment:
     init-payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
     return-url: ${front-end.base-url}/#/my-wallet
     timeout: 15
+
+flashsale:
+  init:
+    admin:
+      email: ${ADMIN_EMAIL}
+      password: ${ADMIN_PASSWORD}

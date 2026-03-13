@@ -10,6 +10,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,5 +19,5 @@ public class Role {
 
     @Column(name = "role_name", nullable = false, unique = true)
     @Enumerated(EnumType.STRING)
-    private ERoleName RoleName;
+    private ERoleName roleName;
 }
