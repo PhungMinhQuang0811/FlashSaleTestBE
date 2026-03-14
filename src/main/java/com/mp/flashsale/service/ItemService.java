@@ -13,8 +13,8 @@ public interface ItemService {
     ItemResponse createItem(CreateItemRequest request);
 
     // Read
-    ItemResponse getItemById(String id);
-
+    ItemResponse getItemDetails(String id);
+    ItemResponse getItemDetailsForSeller(String id);
     // Read - list
     Page<ItemResponse> getAllItems(Pageable pageable);
 

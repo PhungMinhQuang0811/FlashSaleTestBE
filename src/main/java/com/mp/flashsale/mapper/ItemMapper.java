@@ -1,10 +1,12 @@
 package com.mp.flashsale.mapper;
 
 import com.mp.flashsale.dto.request.item.CreateItemRequest;
+import com.mp.flashsale.dto.request.item.UpdateItemRequest;
 import com.mp.flashsale.dto.response.item.ItemResponse;
 import com.mp.flashsale.entity.Item;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface ItemMapper {
@@ -17,6 +19,7 @@ public interface ItemMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "itemType", source = "itemType")
     Item toItem(CreateItemRequest request);
+
 
     // 2. Entity -> Response
     @Mapping(target = "sellerEmail", source = "seller.email")

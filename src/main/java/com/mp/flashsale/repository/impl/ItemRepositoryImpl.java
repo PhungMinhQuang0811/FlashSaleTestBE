@@ -1,5 +1,6 @@
 package com.mp.flashsale.repository.impl;
 
+import com.mp.flashsale.constant.EItemStatus;
 import com.mp.flashsale.entity.Item;
 import com.mp.flashsale.repository.ItemRepository;
 import com.mp.flashsale.repository.jpa.ItemJpaRepository;
@@ -35,21 +36,20 @@ public class ItemRepositoryImpl implements ItemRepository {
     public Page<Item> findAllActive(Pageable pageable) {
         return jpaRepository.findAllByDeletedAtIsNull(pageable);
     }
-
-    @Override
-    public List<Item> findBySellerId(String sellerId) {
-        return jpaRepository.findAllBySellerIdAndDeletedAtIsNull(sellerId);
-    }
-
     @Override
     public void softDelete(String id) {
-        jpaRepository.findById(id).ifPresent(item -> {
-            item.setDeletedAt(LocalDateTime.now());
-            jpaRepository.save(item);
-        });
+        jpaRepository.softDelete(id, LocalDateTime.now(), EItemStatus.DISCONTINUED);
     }
     @Override
     public void flush() {
         jpaRepository.flush();
+    }
+    @Override
+    public Page<Item> findAllByStatus(EItemStatus status, Pageable pageable) {
+        return jpaRepository.findAvailableItems(status, pageable);
+    }
+    @Override
+    public List<Item> findBySellerId(String sellerId) {
+        return jpaRepository.findAllBySeller(sellerId);
     }
 }

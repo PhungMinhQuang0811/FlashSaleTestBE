@@ -1,5 +1,6 @@
 package com.mp.flashsale.repository;
 
+import com.mp.flashsale.constant.EItemStatus;
 import com.mp.flashsale.entity.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,4 +15,5 @@ public interface ItemRepository {
     Page<Item> findAllActive(Pageable pageable);
     List<Item> findBySellerId(String sellerId);
     void softDelete(String id);
+    Page<Item> findAllByStatus(EItemStatus status, Pageable pageable);
 }

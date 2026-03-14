@@ -1,6 +1,7 @@
 package com.mp.flashsale.service.impl;
 
 import com.mp.flashsale.constant.EItemStatus;
+import com.mp.flashsale.constant.EItemType;
 import com.mp.flashsale.dto.request.item.CreateItemRequest;
 import com.mp.flashsale.dto.request.item.UpdateItemRequest;
 import com.mp.flashsale.dto.response.item.ItemResponse;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,8 +43,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemMapper.toItem(request);
         //set id to save image
         item.setId(UUID.randomUUID().toString());
-        //set version when create
-//        item.setVersion(0);
+
         item.setSeller(SecurityUtil.getCurrentAccount());
         item.setItemStatus(EItemStatus.AVAILABLE);
         //up image
@@ -53,28 +54,103 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemResponse getItemById(String id) {
-        return null;
+    public ItemResponse getItemDetailsForSeller(String id) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND_IN_DB));
+
+        String currentAccountId = SecurityUtil.getCurrentAccountId();
+        if (!item.getSeller().getId().equals(currentAccountId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_ITEM_ACCESS);
+        }
+
+        return toItemResponse(item);
+    }
+    @Override
+    public ItemResponse getItemDetails(String id) {
+        Item item = itemRepository.findById(id)
+                .filter(i -> i.getItemStatus() == EItemStatus.AVAILABLE)
+                .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND_IN_DB));
+
+        return toItemResponse(item);
     }
 
     @Override
     public Page<ItemResponse> getAllItems(Pageable pageable) {
-        return null;
+        log.info("Fetching all items with pagination");
+
+        return itemRepository.findAllByStatus(EItemStatus.AVAILABLE, pageable)
+                .map(this::toItemResponse);
     }
 
     @Override
     public List<ItemResponse> getMyItems() {
-        return List.of();
+        String currentAccountId = SecurityUtil.getCurrentAccountId();
+        log.info("Seller {} is fetching their own items", currentAccountId);
+
+        return itemRepository.findBySellerId(currentAccountId)
+                .stream()
+                .map(this::toItemResponse)
+                .toList();
     }
 
     @Override
     public ItemResponse updateItem(String id, UpdateItemRequest request) {
-        return null;
+        // 1. Tìm item cũ
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND_IN_DB));
+
+        String currentAccountId = SecurityUtil.getCurrentAccountId();
+        if (!item.getSeller().getId().equals(currentAccountId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_ITEM_ACCESS);
+        }
+
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            item.setName(request.getName());
+        }
+
+        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+            item.setDescription(request.getDescription());
+        }
+
+        if (request.getOriginalPrice() != null) {
+            item.setOriginalPrice(request.getOriginalPrice());
+        }
+
+        if (request.getQuantity() != null) {
+            item.setQuantity(request.getQuantity());
+        }
+
+        if (request.getItemType() != null && !request.getItemType().trim().isEmpty()) {
+            try {
+                EItemType type = EItemType.valueOf(request.getItemType().toUpperCase());
+                item.setItemType(type);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_ITEM_TYPE);
+            }
+        }
+
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            processUploadImage(request, item);
+        }
+
+        // 4. Lưu và map sang Response DTO
+        Item updatedItem = itemRepository.save(item);
+        return toItemResponse(updatedItem);
     }
 
     @Override
     public void deleteItem(String id) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND_IN_DB));
 
+        String currentAccountId = SecurityUtil.getCurrentAccountId();
+        if (!item.getSeller().getId().equals(currentAccountId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_ITEM_ACCESS);
+        }
+
+        // Soft delete
+        item.setItemStatus(EItemStatus.DISCONTINUED);
+        itemRepository.softDelete(id);
     }
     private void processUploadImage(Object request, Item item) {
         MultipartFile imageFile = null;
