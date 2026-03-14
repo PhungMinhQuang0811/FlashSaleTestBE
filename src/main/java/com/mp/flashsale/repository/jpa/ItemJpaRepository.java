@@ -15,6 +15,7 @@ public interface ItemJpaRepository extends JpaRepository<Item, String> {
     Page<Item> findAllByDeletedAtIsNull(Pageable pageable);
 
     List<Item> findAllBySellerIdAndDeletedAtIsNull(String sellerId);
+    void flush();
 
     Page<Item> findByNameContainingIgnoreCaseAndDeletedAtIsNull(String name, Pageable pageable);
 

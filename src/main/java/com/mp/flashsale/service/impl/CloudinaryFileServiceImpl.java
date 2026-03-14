@@ -23,7 +23,7 @@ public class CloudinaryFileServiceImpl implements FileService {
     Cloudinary cloudinary;
 
     @NonFinal
-    @Value("${cloudinary.folder.name:flashsale}")
+    @Value("${cloud.cloudinary.folder-name}")
     String folderName;
 
     @Override

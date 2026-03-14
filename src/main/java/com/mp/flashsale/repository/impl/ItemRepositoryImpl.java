@@ -48,4 +48,8 @@ public class ItemRepositoryImpl implements ItemRepository {
             jpaRepository.save(item);
         });
     }
+    @Override
+    public void flush() {
+        jpaRepository.flush();
+    }
 }

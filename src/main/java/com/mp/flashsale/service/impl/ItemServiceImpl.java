@@ -48,6 +48,7 @@ public class ItemServiceImpl implements ItemService {
         //up image
         processUploadImage(request, item);
         item = itemRepository.save(item);
+        itemRepository.flush();
         return toItemResponse(item);
     }
 
@@ -98,6 +99,9 @@ public class ItemServiceImpl implements ItemService {
     }
     private ItemResponse toItemResponse(Item item) {
         ItemResponse response = itemMapper.toItemResponse(item);
+
+        response.setCreatedAt(item.getCreatedAt());
+        response.setUpdatedAt(item.getUpdatedAt());
 
         if (item.getImagePublicId() != null && !item.getImagePublicId().isEmpty()) {
             // Gọi sang fileService để sinh ra link secure (https)

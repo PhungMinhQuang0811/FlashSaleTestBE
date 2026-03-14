@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface ItemRepository {
     Item save(Item item);
+    void flush();
     Optional<Item> findById(String id);
     Page<Item> findAllActive(Pageable pageable);
     List<Item> findBySellerId(String sellerId);
