@@ -10,7 +10,7 @@
       max: 10
 
 application:
-  domain-name: ${DOMAIN_NAME:localhost}
+  domain-name: ${DOMAIN_NAME}
   email: ${APPLICATION_EMAIL}
   security:
     jwt:
@@ -24,15 +24,13 @@ application:
       csrf-token-cookie-name: flashsale-jwt-csrf
       csrf-token-header-name: X-CSRF-TOKEN
     public-endpoints:
-      "
-        /user/register
+        "/user/register
         /user/check-unique-email
         /user/resend-verify-email/**
         /user/verify-email/**
         /auth/**
         /homepage/**
-        /items/public/**
-      "
+        /items/public/**"
 
 front-end:
   base-url: ${FE_BASE_URL}

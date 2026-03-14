@@ -1,5 +1,6 @@
 package com.mp.flashsale.service.impl;
 
+import com.mp.flashsale.dto.request.auth.ChangePasswordRequest;
 import com.mp.flashsale.dto.request.auth.LoginRequest;
 import com.mp.flashsale.dto.response.ApiResponse;
 import com.mp.flashsale.dto.response.auth.LoginResponse;
@@ -10,6 +11,7 @@ import com.mp.flashsale.repository.AccountRepository;
 import com.mp.flashsale.security.entity.UserDetailsImpl;
 import com.mp.flashsale.security.service.TokenService;
 import com.mp.flashsale.service.AuthService;
+import com.mp.flashsale.service.EmailService;
 import com.mp.flashsale.util.JwtUtils;
 import com.mp.flashsale.util.RedisUtil;
 import jakarta.servlet.http.Cookie;
@@ -90,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
     PasswordEncoder passwordEncoder;
 
     TokenService tokenService;
-//    EmailService emailService;
+    EmailService emailService;
 
     AccountRepository accountRepository;
 
@@ -254,15 +256,78 @@ public class AuthServiceImpl implements AuthService {
     private ResponseCookie generateCookie(String cookieName, String cookieValue, String path, long maxAgeMiliseconds, boolean isHttpOnly) {
         return ResponseCookie
                 .from(cookieName, cookieValue)
-//                .path(path)
-                .path("/")
-//                .domain(domain)
+                .path(path)
+//                .path("/")
+                .domain(domain)
                 .maxAge(maxAgeMiliseconds / 1000) // seconds ~ 1days
                 .httpOnly(isHttpOnly)
-//                .secure(true)
-                .secure(false)
-//                .sameSite("None")
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("None")
                 .build();
     }
+    //FORGOT PASSWORD
+
+    public void sendForgotPasswordEmail(String email) {
+        log.info("user with email={} request to change password.", email);
+        //is the email used by one account in the system
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_USED_BY_ANY_ACCOUNT));
+
+        //The email in the account is not verified or the account is inactivated
+        if (!account.isEmailVerified() || !account.isActive()) {
+            throw new AppException(ErrorCode.ACCOUNT_IS_INACTIVE);
+        }
+
+        //send email
+        String changePasswordToken = redisUtil.generateForgotPasswordToken(account.getId());
+        String forgotPasswordUrl = frontEndBaseUrl + "/#/auth/forgot-password/verify?t=" + changePasswordToken;
+        log.info("Verify email url: {}", forgotPasswordUrl);
+        emailService.sendForgotPasswordEmail(email, forgotPasswordUrl);
+    }
+
+    /**
+     * verify that the user really forgot the password
+     *
+     * @param forgotPasswordToken
+     * @return change password token if the token is valid
+     */
+    public String verifyForgotPassword(String forgotPasswordToken) {
+        log.info("user with token={} request to change password.", forgotPasswordToken);
+        //verify forgot password token
+        verifyForgotPasswordToken(forgotPasswordToken);
+
+        //return change password token
+        return forgotPasswordToken;
+    }
+
+    private Account verifyForgotPasswordToken(String forgotPasswordToken) {
+        String accountId = redisUtil.getValueOfForgotPasswordToken(forgotPasswordToken);
+        //token exist and not expired
+        if (accountId != null && !accountId.isEmpty()) {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND_IN_DB));
+            //The email in the account is not verified or the account is inactivated
+            if (!account.isEmailVerified() || !account.isActive()) {
+                throw new AppException(ErrorCode.ACCOUNT_IS_INACTIVE);
+            }
+            log.info("Forgot password token is valid");
+            return account;
+        } else {
+            log.info("Forgot password token is invalid!");
+            throw new AppException(ErrorCode.INVALID_FORGOT_PASSWORD_TOKEN);
+        }
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+        log.info("change password ");
+        //Verify the forgot password token
+        Account account = verifyForgotPasswordToken(request.getForgotPasswordToken());
+        //update password
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
+        log.info("Changed password successfully");
+        //delete the forgot password token
+        redisUtil.deleteForgotPasswordToken(request.getForgotPasswordToken());
+    }
+
 }

@@ -59,10 +59,36 @@ public class RedisUtil {
 
     // --- Email & Token
 
-    public String generateVerifyToken(String accountId) {
+    public String generateVerifyEmailToken(String accountId) {
         String token = UUID.randomUUID().toString();
         redisTemplate.opsForValue().set(VERIFY_EMAIL_TOKEN_PREFIX + token, accountId, 30, TimeUnit.MINUTES);
         return token;
+    }
+    public String getValueOfVerifyEmailToken(String token){
+        String key = VERIFY_EMAIL_TOKEN_PREFIX + token;
+        Object accountId = redisTemplate.opsForValue().getAndDelete(key);
+
+        if (accountId == null) return null;
+        return String.valueOf(accountId);
+    }
+    public String generateForgotPasswordToken(String accountId){
+        String token = UUID.randomUUID().toString();
+        String key = FORGOT_PASSWORD_TOKEN_PREFIX + token;
+        redisTemplate.opsForValue().set(key, accountId, 24, TimeUnit.HOURS);
+        //TODO: test
+//        redisTemplate.opsForValue().set(key, accountId, 20, TimeUnit.SECONDS);
+        return token;
+    }
+    public String getValueOfForgotPasswordToken(String token){
+        String key = FORGOT_PASSWORD_TOKEN_PREFIX + token;
+        Object accountId = redisTemplate.opsForValue().getAndDelete(key);
+
+        if (accountId == null) return null;
+        return String.valueOf(accountId);
+    }
+    public void deleteForgotPasswordToken(String token){
+        String key = FORGOT_PASSWORD_TOKEN_PREFIX + token;
+        redisTemplate.delete(key);
     }
 
     public String getAccountIdByToken(String token) {

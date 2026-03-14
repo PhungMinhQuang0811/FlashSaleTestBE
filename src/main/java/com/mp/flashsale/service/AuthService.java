@@ -1,5 +1,6 @@
 package com.mp.flashsale.service;
 
+import com.mp.flashsale.dto.request.auth.ChangePasswordRequest;
 import com.mp.flashsale.dto.request.auth.LoginRequest;
 import com.mp.flashsale.dto.response.ApiResponse;
 import com.mp.flashsale.dto.response.auth.LoginResponse;
@@ -10,4 +11,7 @@ public interface AuthService {
     public ResponseEntity<ApiResponse<LoginResponse>> login(LoginRequest request);
     public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request);
     public ResponseEntity<ApiResponse<String>> refreshToken(HttpServletRequest request);
+    public void sendForgotPasswordEmail(String email);
+    public String verifyForgotPassword(String forgotPasswordToken);
+    public void changePassword(ChangePasswordRequest request);
 }

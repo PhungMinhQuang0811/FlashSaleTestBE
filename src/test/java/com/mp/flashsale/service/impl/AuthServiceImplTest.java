@@ -1,6 +1,7 @@
 package com.mp.flashsale.service.impl;
 
 import com.mp.flashsale.constant.ERoleName;
+import com.mp.flashsale.dto.request.auth.ChangePasswordRequest;
 import com.mp.flashsale.dto.request.auth.LoginRequest;
 import com.mp.flashsale.dto.response.ApiResponse;
 import com.mp.flashsale.dto.response.auth.LoginResponse;
@@ -11,6 +12,7 @@ import com.mp.flashsale.repository.AccountRepository;
 import com.mp.flashsale.security.entity.UserDetailsImpl;
 import com.mp.flashsale.security.service.TokenService;
 import com.mp.flashsale.util.JwtUtils;
+import com.mp.flashsale.util.RedisUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +47,8 @@ class AuthServiceImplTest {
     AuthenticationManager authenticationManager;
     @Mock
     JwtUtils jwtUtils;
+    @Mock
+    RedisUtil redisUtil;
     @Mock
     TokenService tokenService;
     @Mock
@@ -189,6 +193,74 @@ class AuthServiceImplTest {
             when(tokenService.isRefreshTokenInvalidated(anyString())).thenReturn(true);
 
             assertThrows(AppException.class, () -> authService.refreshToken(request));
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests cho tính năng Forgot Password (Service Logic)")
+    class ForgotPasswordExtendedTests {
+
+        @Test
+        @DisplayName("Gửi email quên mật khẩu thất bại - Email không tồn tại")
+        void sendForgotPasswordEmail_EmailNotFound_Fail() {
+            // Given
+            String email = "notfound@example.com";
+            when(accountRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+            // When & Then
+            AppException ex = assertThrows(AppException.class, () -> authService.sendForgotPasswordEmail(email));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.EMAIL_NOT_USED_BY_ANY_ACCOUNT);
+        }
+
+        @Test
+        @DisplayName("Xác thực Forgot Token thất bại - Tài khoản đã bị khóa (sau khi cấp token)")
+        void verifyForgotPassword_AccountLocked_Fail() {
+            // Given
+            String token = "valid-token-but-locked-user";
+            Account lockedAccount = new Account();
+            lockedAccount.setId("acc-123");
+            lockedAccount.setActive(false); // User bị khóa bởi admin sau khi nhận mail
+
+            when(redisUtil.getValueOfForgotPasswordToken(token)).thenReturn("acc-123");
+            when(accountRepository.findById("acc-123")).thenReturn(Optional.of(lockedAccount));
+
+            // When & Then
+            AppException ex = assertThrows(AppException.class, () -> authService.verifyForgotPassword(token));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_IS_INACTIVE);
+        }
+
+        @Test
+        @DisplayName("Xác thực Forgot Token thất bại - Token rỗng hoặc null")
+        void verifyForgotPassword_TokenEmpty_Fail() {
+            // When & Then (accountId trả về rỗng từ Redis)
+            when(redisUtil.getValueOfForgotPasswordToken("empty-token")).thenReturn("");
+
+            assertThrows(AppException.class, () -> authService.verifyForgotPassword("empty-token"));
+        }
+
+        @Test
+        @DisplayName("Đổi mật khẩu thất bại - Token hết hạn ngay lúc nhấn Submit")
+        void changePassword_TokenExpiredAtSubmit_Fail() {
+            // Given
+            ChangePasswordRequest request = new ChangePasswordRequest("expired-at-submit", "newPass");
+            when(redisUtil.getValueOfForgotPasswordToken(anyString())).thenReturn(null);
+
+            // When & Then
+            AppException ex = assertThrows(AppException.class, () -> authService.changePassword(request));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_FORGOT_PASSWORD_TOKEN);
+        }
+
+        @Test
+        @DisplayName("Đổi mật khẩu thất bại - Account bỗng dưng biến mất khỏi DB")
+        void changePassword_AccountDisappeared_Fail() {
+            // Given
+            ChangePasswordRequest request = new ChangePasswordRequest("token-exists", "newPass");
+            when(redisUtil.getValueOfForgotPasswordToken("token-exists")).thenReturn("ghost-id");
+            when(accountRepository.findById("ghost-id")).thenReturn(Optional.empty());
+
+            // When & Then
+            AppException ex = assertThrows(AppException.class, () -> authService.changePassword(request));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND_IN_DB);
         }
     }
 }
