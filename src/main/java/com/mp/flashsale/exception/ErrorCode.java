@@ -39,7 +39,7 @@ public enum ErrorCode {
     INVALID_PRODUCTION_YEAR(2011, "Your production year was not predefined. Please try another year", HttpStatus.BAD_REQUEST),
     INVALID_NUMBER_OF_SEAT(2012, "Invalid number of seats. Allowed values are 4, 5, or 7.", HttpStatus.BAD_REQUEST),
     INVALID_BRAND(2013, "Your brand were not predefined. Please try another brand", HttpStatus.BAD_REQUEST),
-    INVALID_MODEL(2014, "Your model were not predefined. Please try another model", HttpStatus.BAD_REQUEST),
+    INVALID_ITEM_TYPE(2014, "Your item type were not predefined. Please try another item type", HttpStatus.BAD_REQUEST),
     INVALID_BRAND_MODEL(2015, "Your brand-model were not matched. Please try again", HttpStatus.BAD_REQUEST),
     INVALID_DOCUMENT_FILE(2016,"Invalid file type. Accepted formats are .doc, .docx, .pdf, .jpeg, .jpg, .png", HttpStatus.BAD_REQUEST),
     INVALID_CAR_IMAGE_FILE(2017,"Invalid file type. Accepted formats are .jpg, .jpeg, .png, .gif", HttpStatus.BAD_REQUEST),

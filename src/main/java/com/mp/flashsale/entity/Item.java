@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Item {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
     private String id;
 
@@ -32,9 +31,6 @@ public class Item {
 
     @Column(name = "original_price", nullable = false)
     private Long originalPrice;
-
-    @Column(name = "sale_price")
-    private Long salePrice;
 
     @Column(name = "image_public_id", nullable = false)
     private String imagePublicId;
@@ -64,4 +60,6 @@ public class Item {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

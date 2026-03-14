@@ -78,16 +78,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(publicEndpoints).permitAll()
                         // Kiểm soát luồng Flash Sale Order
-                        .requestMatchers(HttpMethod.POST, "/api/flash-sale/order/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/flash-sale/order/seller/**").hasRole("SELLER")
-                        .requestMatchers("/api/flash-sale/order/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/flash-sale/order/**").hasRole("CUSTOMER")
+                        .requestMatchers("/flash-sale/order/seller/**").hasRole("SELLER")
+                        .requestMatchers("/flash-sale/order/admin/**").hasRole("ADMIN")
 
                         // Quản lý Item
-                        .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()
-                        .requestMatchers("/api/items/seller/**").hasRole("SELLER")
+                        .requestMatchers("/items/seller/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.GET, "/items/**").permitAll()
 
                         // Quản lý Ví & Giao dịch
-                        .requestMatchers("/api/wallet/**").authenticated()
+                        .requestMatchers("/wallet/**").authenticated()
 
                         .anyRequest().authenticated()
                 );
