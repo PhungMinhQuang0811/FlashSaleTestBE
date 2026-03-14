@@ -4,8 +4,10 @@ import com.mp.flashsale.constant.ERoleName;
 import com.mp.flashsale.dto.request.auth.LoginRequest;
 import com.mp.flashsale.dto.response.ApiResponse;
 import com.mp.flashsale.dto.response.auth.LoginResponse;
+import com.mp.flashsale.entity.Account;
 import com.mp.flashsale.exception.AppException;
 import com.mp.flashsale.exception.ErrorCode;
+import com.mp.flashsale.repository.AccountRepository;
 import com.mp.flashsale.security.entity.UserDetailsImpl;
 import com.mp.flashsale.security.service.TokenService;
 import com.mp.flashsale.util.JwtUtils;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +31,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,13 +41,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
 
-    @Mock AuthenticationManager authenticationManager;
-    @Mock JwtUtils jwtUtils;
-    @Mock TokenService tokenService;
+    @Mock
+    AuthenticationManager authenticationManager;
+    @Mock
+    JwtUtils jwtUtils;
+    @Mock
+    TokenService tokenService;
+    @Mock
+    AccountRepository accountRepository;
     @InjectMocks
     AuthServiceImpl authService;
 
     private LoginRequest loginRequest;
+
 
     @BeforeEach
     void setUp() {
@@ -136,24 +146,38 @@ class AuthServiceImplTest {
     @DisplayName("Tests cho phương thức Refresh Token")
     class RefreshTokenTests {
         @Test
-        @DisplayName("Refresh thành công - Trả về Access Token mới")
+        @DisplayName("Refresh thành công - Cấp bộ token mới và hủy token cũ")
         void refreshToken_Success() {
-            // GIVEN
+            // 1. GIVEN
             HttpServletRequest request = mock(HttpServletRequest.class);
-            Cookie rtCookie = new Cookie("flashsale-refresh", "valid-rt");
+            String oldRt = "valid-old-refresh-token";
+            String email = "user@example.com";
+            String accountId = "ACC_123";
+
+            // SỬA TÊN COOKIE Ở ĐÂY: Phải khớp với "flashsale-refresh" trong setUp()
+            Cookie rtCookie = new Cookie("flashsale-refresh", oldRt);
             when(request.getCookies()).thenReturn(new Cookie[]{rtCookie});
 
-            // Giả lập các bước JwtUtils cần làm
-            when(jwtUtils.getUserAccountIdFromRefreshToken("valid-rt")).thenReturn("ACC_123");
-            when(tokenService.isRefreshTokenInvalidated("valid-rt")).thenReturn(false);
-            when(jwtUtils.generateAccessTokenFromUserEmail(anyString())).thenReturn("new-at");
+            // Mock Account
+            Account mockAccount = new Account();
+            mockAccount.setId(accountId);
+            mockAccount.setEmail(email);
+            mockAccount.setActive(true);
 
-            // WHEN
+            when(tokenService.isRefreshTokenInvalidated(oldRt)).thenReturn(false);
+            when(jwtUtils.getUserAccountIdFromRefreshToken(oldRt)).thenReturn(accountId);
+            when(accountRepository.findById(accountId)).thenReturn(Optional.of(mockAccount));
+
+            String newCsrf = "new-csrf-token";
+            when(jwtUtils.generateCsrfTokenFromUserEmail(email)).thenReturn(newCsrf);
+
+            // 2. WHEN
             ResponseEntity<ApiResponse<String>> response = authService.refreshToken(request);
 
-            // THEN
-            assertThat(response).isNotNull(); // Check null trước khi gọi getStatusCode
-            assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+            // 3. THEN
+            assertThat(response).isNotNull();
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().getData()).isEqualTo(newCsrf);
         }
 
         @Test

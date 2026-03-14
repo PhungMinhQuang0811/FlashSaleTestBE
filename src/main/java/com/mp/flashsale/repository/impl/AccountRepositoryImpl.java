@@ -29,4 +29,9 @@ public class AccountRepositoryImpl implements AccountRepository {
     public Account save(Account account) {
         return accountJpaRepository.save(account);
     }
+
+    @Override
+    public Optional<Account> findById(String id) {
+        return accountJpaRepository.findById(id);
+    }
 }

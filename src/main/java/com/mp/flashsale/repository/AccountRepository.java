@@ -1,8 +1,6 @@
 package com.mp.flashsale.repository;
 
 import com.mp.flashsale.entity.Account;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
@@ -13,4 +11,5 @@ public interface AccountRepository {
 
     Account findByRoleId(int i);
     Account save(Account account);
+    Optional<Account> findById(String id);
 }

@@ -3,8 +3,11 @@ package com.mp.flashsale.config;
 import com.mp.flashsale.constant.ERoleName;
 import com.mp.flashsale.entity.Account;
 import com.mp.flashsale.entity.Role;
+import com.mp.flashsale.entity.Wallet;
 import com.mp.flashsale.repository.AccountRepository;
 import com.mp.flashsale.repository.RoleRepository;
+import com.mp.flashsale.repository.WalletRepository;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -63,8 +66,16 @@ public class ApplicationInitConfig {
                 adminAccount.setActive(true);
                 adminAccount.setEmailVerified(true);
 
+                // Create wallet for admin
+                Wallet adminWallet = new Wallet();
+                adminWallet.setAccount(adminAccount);
+                adminWallet.setBalance(0L);
+
+                adminAccount.setWallet(adminWallet);
+
                 accountRepository.save(adminAccount);
-                log.info("Seed data success. Admin account was created");
+
+                log.info("Seed data success. Admin account and Wallet were created");
             }
         };
     }
