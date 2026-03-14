@@ -27,7 +27,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class ApplicationInitConfig {
 
     RoleRepository roleRepository;
+
     AccountRepository accountRepository;
+
     PasswordEncoder passwordEncoder;
 
     @Value("${flashsale.init.enabled:false}")
