@@ -78,7 +78,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(publicEndpoints).permitAll()
                         // Kiểm soát luồng Flash Sale Order
-                        .requestMatchers(HttpMethod.POST, "/api/flash-sale/order/**").hasRole("BUYER")
+                        .requestMatchers(HttpMethod.POST, "/api/flash-sale/order/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/flash-sale/order/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/flash-sale/order/admin/**").hasRole("ADMIN")
 

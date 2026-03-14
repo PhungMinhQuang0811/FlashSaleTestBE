@@ -26,6 +26,11 @@ public class ApplicationInitConfig {
     RoleRepository roleRepository;
     AccountRepository accountRepository;
     PasswordEncoder passwordEncoder;
+
+    @Value("${flashsale.init.enabled:false}")
+    @NonFinal
+    boolean isInitEnabled;
+
     @Value("${flashsale.init.admin.email}")
     @NonFinal
     String adminEmail;
@@ -37,6 +42,10 @@ public class ApplicationInitConfig {
     @Bean
     ApplicationRunner init() {
         return args -> {
+            if (!isInitEnabled) {
+                log.info("Skip seeding data (enabled=false)");
+                return;
+            }
             createRoleIfNotFound(ERoleName.ADMIN);
             createRoleIfNotFound(ERoleName.CUSTOMER);
             createRoleIfNotFound(ERoleName.SELLER);
