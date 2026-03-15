@@ -26,6 +26,9 @@ public class RedisUtil {
     static String FORGOT_PASSWORD_TOKEN_PREFIX = "forgot-password-tk:";
     static String LOCK_ITEM_PREFIX = "lock:item:"; // khóa sản phẩm khi thanh toán
 
+    public RedisTemplate<String, Object> getRedisTemplate() {
+        return redisTemplate;
+    }
     /**
      * Sinh Order Number theo dạng: yyyyMMdd-00000001
      */
@@ -46,7 +49,7 @@ public class RedisUtil {
     public void addItemToCart(String accountId, String itemId, Integer quantity) {
         String key = CART_PREFIX + accountId;
         redisTemplate.opsForHash().put(key, itemId, String.valueOf(quantity));
-        redisTemplate.expire(key, 7, TimeUnit.DAYS); // Giỏ hàng lưu 7 ngày
+        redisTemplate.expire(key, 2, TimeUnit.DAYS); // Giỏ hàng lưu 7 ngày
     }
 
     public Object getCart(String accountId) {

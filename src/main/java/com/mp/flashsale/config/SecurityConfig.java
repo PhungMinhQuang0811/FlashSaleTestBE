@@ -86,6 +86,9 @@ public class SecurityConfig {
                         .requestMatchers("/items/seller/**").hasRole("SELLER")
                         .requestMatchers(HttpMethod.GET, "/items/**").permitAll()
 
+                        // Cart
+                        .requestMatchers("/cart/**").hasRole("CUSTOMER")
+
                         // Quản lý Ví & Giao dịch
                         .requestMatchers("/wallet/**").authenticated()
 

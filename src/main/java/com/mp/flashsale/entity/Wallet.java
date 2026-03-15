@@ -22,4 +22,7 @@ public class Wallet {
     @MapsId
     @JoinColumn(name = "account_id")
     private Account account;
+    @Version
+    @Column(name = "version_id", nullable = false)
+    private Long version;
 }
