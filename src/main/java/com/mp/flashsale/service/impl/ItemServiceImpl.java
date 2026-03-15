@@ -5,10 +5,12 @@ import com.mp.flashsale.constant.EItemType;
 import com.mp.flashsale.dto.request.item.CreateItemRequest;
 import com.mp.flashsale.dto.request.item.UpdateItemRequest;
 import com.mp.flashsale.dto.response.item.ItemResponse;
+import com.mp.flashsale.entity.FlashSale;
 import com.mp.flashsale.entity.Item;
 import com.mp.flashsale.exception.AppException;
 import com.mp.flashsale.exception.ErrorCode;
 import com.mp.flashsale.mapper.ItemMapper;
+import com.mp.flashsale.repository.FlashSaleRepository;
 import com.mp.flashsale.repository.ItemRepository;
 import com.mp.flashsale.service.FileService;
 import com.mp.flashsale.service.ItemService;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,6 +38,7 @@ import java.util.UUID;
 @Slf4j
 public class ItemServiceImpl implements ItemService {
     ItemRepository itemRepository;
+    FlashSaleRepository flashSaleRepository;
     FileService fileService;
     ItemMapper itemMapper;
 
@@ -184,6 +188,11 @@ public class ItemServiceImpl implements ItemService {
             String fullUrl = fileService.getFileUrl(item.getImagePublicId());
             response.setImageUrl(fullUrl);
         }
+        flashSaleRepository.findActiveFlashSale(item.getId())
+                .ifPresentOrElse(
+                        fs -> response.setSalePrice(fs.getSalePrice()),
+                        () -> response.setSalePrice(null)
+                );
 
         return response;
     }

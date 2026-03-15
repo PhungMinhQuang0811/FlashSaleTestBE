@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Order {
     @Id
     @Column(name = "order_number", unique = true, nullable = false)
@@ -32,6 +33,8 @@ public class Order {
 
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt;
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
 
     @Column(name = "complaint_deadline")
     private LocalDateTime complaintDeadline;

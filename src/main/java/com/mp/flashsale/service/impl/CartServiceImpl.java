@@ -90,7 +90,6 @@ public class CartServiceImpl implements CartService {
     @Override
     public void removeFromCart(String itemId) {
         String accountId = SecurityUtil.getCurrentAccountId();
-        String key = "cart:" + accountId;
-        redisUtil.getRedisTemplate().opsForHash().delete(key, itemId);
+        redisUtil.removeItemFromCart(accountId, itemId);
     }
 }

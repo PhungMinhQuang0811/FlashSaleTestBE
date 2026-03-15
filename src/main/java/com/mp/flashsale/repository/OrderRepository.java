@@ -1,5 +1,10 @@
 package com.mp.flashsale.repository;
 
+import com.mp.flashsale.entity.Order;
+
+import java.util.Optional;
+
 public interface OrderRepository {
-    int decreaseStock(String id, Integer quantity, Long currentVersion);
+    Order save(Order order);
+    Optional<Order> findByOrderNumber(String orderNumber);
 }

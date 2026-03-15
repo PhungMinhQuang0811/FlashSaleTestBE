@@ -28,6 +28,8 @@ public class ItemResponse {
     @Schema(example = "32000000", description = "Original price in VND")
     Long originalPrice;
 
+    Long salePrice;
+
     @Schema(example = "https://res.cloudinary.com/.../iphone15.jpg", description = "Full URL to the product image")
     String imageUrl;
 

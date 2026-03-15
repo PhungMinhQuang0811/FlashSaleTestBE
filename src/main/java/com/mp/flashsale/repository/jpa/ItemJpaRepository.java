@@ -34,4 +34,9 @@ public interface ItemJpaRepository extends JpaRepository<Item, String> {
     @Query("UPDATE Item i SET i.deletedAt = :now, i.itemStatus = :status WHERE i.id = :id")
     void softDelete(String id, LocalDateTime now, EItemStatus status);
 
+    @Modifying
+    @Query("UPDATE Item i SET i.quantity = i.quantity - :qty, i.version = i.version + 1 " +
+            "WHERE i.id = :id AND i.quantity >= :qty AND i.version = :currentVersion")
+    int decreaseStock(String id, Integer qty, Integer currentVersion);
+
 }

@@ -16,5 +16,6 @@ public class LoginResponse {
     String userRole;
     @Schema(example = "hoadsfhiawuehdsgvf")
     String csrfToken;
+    Long balance;
 
 }

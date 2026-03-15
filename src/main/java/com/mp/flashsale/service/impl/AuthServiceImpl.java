@@ -121,9 +121,11 @@ public class AuthServiceImpl implements AuthService {
 
         //put user's role and fullname in response
         String role = userDetails.getRole().getRoleName().toString();
+        var account = userDetails.getAccount();
+        var balance = account.getWallet().getBalance();
         String csrfToken = jwtUtils.generateCsrfTokenFromUserEmail(userDetails.getEmail());
         ApiResponse<LoginResponse> apiResponse = ApiResponse.<LoginResponse>builder()
-                .data(new LoginResponse(role, csrfToken))
+                .data(new LoginResponse(role, csrfToken, balance))
                 .build();
         log.info("Account with email={} logged in successfully", request.getEmail());
         return sendApiResponseResponseEntity(userDetails.getEmail(), userDetails.getAccoutnId(), apiResponse);

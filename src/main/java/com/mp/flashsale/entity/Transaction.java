@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

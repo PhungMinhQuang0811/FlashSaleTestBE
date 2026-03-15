@@ -7,16 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
-/**
- * Enumeration representing custom error codes for the application.
- * <p>
- * This centralized error handling mechanism allows for consistent error reporting across the application.
- * </p>
- *
- * @author DieuTTH4
- *
- * @version 1.0
- */
+
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -105,6 +96,10 @@ public enum ErrorCode {
 
     OUT_OF_STOCK(3047, "Sorry, this item is currently out of stock!", HttpStatus.BAD_REQUEST),
     INSUFFICIENT_BALANCE(3045, "Your wallet does not have enough balance.", HttpStatus.BAD_REQUEST),
+    FLASH_SALE_CONCURRENCY_ERROR(3048, "The system is busy due to a high volume of purchases; please try again shortly!", HttpStatus.CONFLICT),
+    PURCHASE_LIMIT_EXCEEDED(3049, "You have exceeded the maximum quantity allowed for this product!", HttpStatus.BAD_REQUEST),
+    STILL_IN_COMPLAINT_PERIOD(3051, "The complaint period is not over yet. Cannot settle payment.", HttpStatus.BAD_REQUEST),
+    ORDER_OWNERSHIP_MISMATCH(3052, "You do not have permission to perform this action on this order.", HttpStatus.FORBIDDEN),
     //range 4xxx
     UNCATEGORIZED_EXCEPTION(4000, "There was error happen during run time", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_ERROR_KEY(4001, "The error key could be misspelled", HttpStatus.INTERNAL_SERVER_ERROR),

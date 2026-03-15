@@ -16,4 +16,6 @@ public interface ItemRepository {
     List<Item> findBySellerId(String sellerId);
     void softDelete(String id);
     Page<Item> findAllByStatus(EItemStatus status, Pageable pageable);
+    int decreaseStock(String id, Integer quantity, Integer currentVersion);
+
 }

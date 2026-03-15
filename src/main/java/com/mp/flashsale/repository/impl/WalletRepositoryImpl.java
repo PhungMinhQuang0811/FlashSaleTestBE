@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -16,5 +18,10 @@ public class WalletRepositoryImpl implements WalletRepository {
     @Override
     public Wallet save(Wallet wallet) {
         return walletJpaRepository.save(wallet);
+    }
+
+    @Override
+    public Optional<Wallet> findById(String id) {
+        return walletJpaRepository.findById(id);
     }
 }
